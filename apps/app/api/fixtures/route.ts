@@ -1,29 +1,42 @@
-// pages/api/fixtures.ts
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function GET(req: NextRequest) {
   try {
-    const { fromDate, toDate } = req.query;
+    const searchParams = req.nextUrl.searchParams;
+    const fromDate = searchParams.get("fromDate");
+    const toDate = searchParams.get("toDate");
 
+    const upstreamParams = new URLSearchParams();
+
+    if (fromDate) {
+      upstreamParams.set("fromDate", fromDate);
+    }
+
+    if (toDate) {
+      upstreamParams.set("toDate", toDate);
+    }
+
+    const query = upstreamParams.toString();
     const txRes = await fetch(
-      `https://txline.txodds.com/api/fixtures?fromDate=${fromDate}&toDate=${toDate}`,
+      `https://txline.txodds.com/api/fixtures/snapshot${query ? `?${query}` : ""}`,
       {
         headers: {
-          "Authorization": `Bearer ${process.env.TXLINE_JWT}`,
+          Authorization: `Bearer ${process.env.TXLINE_JWT}`,
           "X-Api-Token": process.env.TXLINE_API_KEY!,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!txRes.ok) {
       const text = await txRes.text();
-      return res.status(txRes.status).send(text);
+      return new NextResponse(text, { status: txRes.status });
     }
 
     const data = await txRes.json();
-    res.status(200).json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    return NextResponse.json(data);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
