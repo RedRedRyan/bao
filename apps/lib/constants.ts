@@ -19,6 +19,7 @@ export interface Match {
     volume: string;
     time: string;
     date: string;
+    competition?: string;
     venue?: string;
     description?: string;
     totalVolume?: string;

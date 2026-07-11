@@ -1,13 +1,16 @@
-import { matchLists } from "@/lib/constants";
 import MatchDetails from "@/components/MatchDetails";
+import { getFixtureMatches } from "@/lib/fixtures";
+
+export const dynamic = "force-dynamic";
 
 export default async function MatchDetailsPage({
   params,
 }: {
-  params: Promise<{ slug: string }>; // ✅ changed from 'id' to 'slug'
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params; // ✅ use 'slug'
-  const match = matchLists.find((item) => item.slug === slug);
+  const { slug } = await params;
+  const matches = await getFixtureMatches();
+  const match = matches.find((item) => item.slug === slug);
 
   if (!match) {
     return (

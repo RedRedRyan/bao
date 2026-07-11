@@ -1,7 +1,13 @@
 "use client";
 import React from "react";
 import ReactCountryFlag from "react-country-flag";
-import { Clock } from "lucide-react";
+import {
+  Clock,
+  Crown,
+  Handshake,
+  Shield,
+  Trophy,
+} from "lucide-react";
 import Link from "next/link";
 
 interface MatchCardProps {
@@ -17,6 +23,7 @@ interface MatchCardProps {
   };
   volume: string;
   time: string;
+  competition?: string;
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({
@@ -28,6 +35,7 @@ const MatchCard: React.FC<MatchCardProps> = ({
   odds,
   volume,
   time,
+  competition,
 }) => {
   return (
     <Link
@@ -35,11 +43,17 @@ const MatchCard: React.FC<MatchCardProps> = ({
       className="block transition-transform hover:scale-[1.02] active:scale-[0.98]"
     >
       <div className="bg-gray-900 text-white rounded-lg p-4 w-full max-w-md cursor-pointer border border-transparent hover:border-white/20">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-sm text-gray-400 flex items-center gap-1">
-            <Clock size={14} />
-            {time}
-          </span>
+        <div className="flex justify-between items-start gap-3 mb-4">
+          <div className="flex flex-col gap-1 text-sm text-gray-400">
+            <span className="flex items-center gap-1">
+              {renderCompetitionIcon(competition)}
+              {competition || "Fixture"}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock size={14} />
+              {time}
+            </span>
+          </div>
           <span className="text-sm text-gray-400">Vol: {volume}</span>
         </div>
 
@@ -77,5 +91,27 @@ const MatchCard: React.FC<MatchCardProps> = ({
     </Link>
   );
 };
+
+function renderCompetitionIcon(competition: string | undefined) {
+  const normalized = competition?.toLowerCase() || "";
+
+  if (normalized.includes("friendly") || normalized.includes("friendlies")) {
+    return <Handshake size={14} />;
+  }
+
+  if (normalized.includes("world cup")) {
+    return <Trophy size={14} />;
+  }
+
+  if (normalized.includes("epl") || normalized.includes("premier league")) {
+    return <Crown size={14} />;
+  }
+
+  if (normalized.includes("la liga")) {
+    return <Shield size={14} />;
+  }
+
+  return <Shield size={14} />;
+}
 
 export default MatchCard;
