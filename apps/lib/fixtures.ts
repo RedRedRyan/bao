@@ -1,4 +1,4 @@
-import type { Match } from "@/lib/constants";
+import { buildMatchMarkets, type Match } from "@/lib/constants";
 
 export interface FixturesQuery {
   fromDate?: string | null;
@@ -101,6 +101,7 @@ function normalizeFixture(fixture: FixtureRecord, index: number): Match {
     competition,
     venue: getString(fixture, ["venue", "stadium", "ground", "Competition"]),
     description: `${competition || "Fixture"}: ${homeTeam} vs ${awayTeam}`,
+    markets: buildMatchMarkets({ homeTeam, awayTeam }),
   };
 }
 
