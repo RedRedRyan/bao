@@ -30,4 +30,20 @@ pub enum ErrorCode {
     /// The market timeout must be in the future.
     #[msg("Market timeout must be in the future")]
     InvalidTimeout,
+
+    /// The market is not in the expected Open state.
+    #[msg("Market is not open for betting")]
+    MarketNotOpen,
+
+    /// The chosen outcome index is invalid for this market.
+    #[msg("Invalid outcome index chosen")]
+    InvalidOutcome,
+
+    /// The bet amount must be greater than zero.
+    #[msg("Bet amount must be greater than zero")]
+    InvalidBetAmount,
+
+    /// A calculation resulted in a math overflow or underflow.
+    #[msg("Math overflow or underflow occurred")]
+    MathOverflow,
 }

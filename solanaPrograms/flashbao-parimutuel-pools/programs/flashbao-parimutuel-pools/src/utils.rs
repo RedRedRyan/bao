@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::{MAX_FEE_BPS, MAX_METADATA_URI_LEN, MAX_OUTCOMES},
     error::ErrorCode,
+    state::MarketStatus,
 };
 
 /// Validates that the protocol is not paused.
@@ -41,5 +42,11 @@ pub fn validate_metadata_uri(metadata_uri: &str) -> Result<()> {
 /// Validates that a timeout is strictly after the current unix timestamp.
 pub fn validate_future_timeout(timeout_ts: i64, current_ts: i64) -> Result<()> {
     require!(timeout_ts > current_ts, ErrorCode::InvalidTimeout);
+    Ok(())
+}
+
+/// Validates that a market is in the Open state.
+pub fn assert_market_open(status: &MarketStatus) -> Result<()> {
+    require!(*status == MarketStatus::Open, ErrorCode::MarketNotOpen);
     Ok(())
 }

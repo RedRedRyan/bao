@@ -44,7 +44,7 @@ pub mod flashbao_parimutuel_pools {
         oracle_authority: Pubkey,
         timeout_ts: i64,
     ) -> Result<()> {
-        crate::instructions::create_market::handler(
+        crate::instructions::create_market::handle_create_market(
             ctx,
             market_id,
             metadata_uri,
@@ -54,5 +54,14 @@ pub mod flashbao_parimutuel_pools {
             oracle_authority,
             timeout_ts,
         )
+    }
+
+    /// Places a bet on a specific outcome in a generic parimutuel market.
+    pub fn place_bet(
+        ctx: Context<PlaceBet>,
+        amount: u64,
+        outcome: u16,
+    ) -> Result<()> {
+        crate::instructions::place_bet::handle_place_bet(ctx, amount, outcome)
     }
 }
