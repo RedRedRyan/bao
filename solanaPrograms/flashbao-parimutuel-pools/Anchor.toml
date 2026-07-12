@@ -9,9 +9,12 @@ skip-lint = false
 [programs.localnet]
 flashbao_parimutuel_pools = "251CWh7GNsFWcqnCPw55R6A4LdSQ6qnD94Jkczr6JxAQ"
 
+[programs.devnet]
+flashbao_parimutuel_pools="251CWh7GNsFWcqnCPw55R6A4LdSQ6qnD94Jkczr6JxAQ"
+
 [provider]
-cluster = "localnet"
-wallet = "~/.config/solana/id.json"
+cluster = "devnet"
+wallet = "~/.config/solana/phantom-deployer.json"
 
 [scripts]
 test = "cargo test"
