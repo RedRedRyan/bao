@@ -76,3 +76,19 @@ pub struct Market {
     /// PDA bump for the market SOL vault account.
     pub vault_bump: u8,
 }
+
+/// Individual bet state.
+#[account]
+#[derive(InitSpace)]
+pub struct Bet {
+    /// The market this bet is placed in.
+    pub market: Pubkey,
+    /// The bettor who placed this bet.
+    pub bettor: Pubkey,
+    /// The outcome index the bettor chose.
+    pub outcome: u16,
+    /// The total amount of SOL placed on this outcome.
+    pub amount: u64,
+    /// PDA bump for the bet account.
+    pub bump: u8,
+}

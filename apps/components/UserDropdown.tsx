@@ -27,7 +27,7 @@ const UserDropdown = () => {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
                     className="flex items-center gap-3 text-gray-400 hover:text-yellow-500"

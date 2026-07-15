@@ -76,7 +76,7 @@ pub struct MarketCreated {
 }
 
 /// Creates a reusable generic parimutuel market without accepting any bets.
-pub fn handler(
+pub fn handle_create_market(
     ctx: Context<CreateMarket>,
     market_id: [u8; 32],
     metadata_uri: String,

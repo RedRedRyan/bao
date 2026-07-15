@@ -21,3 +21,7 @@ pub const MAX_OUTCOMES: usize = 20;
 
 /// Maximum byte length for an off-chain metadata URI.
 pub const MAX_METADATA_URI_LEN: usize = 200;
+
+/// Seed prefix used to derive Bet PDAs.
+#[constant]
+pub const BET_SEED: &[u8] = b"bet";

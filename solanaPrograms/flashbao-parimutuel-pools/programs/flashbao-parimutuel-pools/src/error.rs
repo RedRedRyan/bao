@@ -30,4 +30,52 @@ pub enum ErrorCode {
     /// The market timeout must be in the future.
     #[msg("Market timeout must be in the future")]
     InvalidTimeout,
+
+    /// The market is not in the expected Open state.
+    #[msg("Market is not open for betting")]
+    MarketNotOpen,
+
+    /// The chosen outcome index is invalid for this market.
+    #[msg("Invalid outcome index chosen")]
+    InvalidOutcome,
+
+    /// The bet amount must be greater than zero.
+    #[msg("Bet amount must be greater than zero")]
+    InvalidBetAmount,
+
+    /// A calculation resulted in a math overflow or underflow.
+    #[msg("Math overflow or underflow occurred")]
+    MathOverflow,
+
+    /// The market is not in the expected Locked state.
+    #[msg("Market is not locked for resolution")]
+    MarketNotLocked,
+
+    /// The market is not in the expected Resolved state.
+    #[msg("Market is not resolved")]
+    MarketNotResolved,
+
+    /// The provided oracle signature is invalid.
+    #[msg("Invalid oracle signature")]
+    InvalidOracleSignature,
+
+    /// The bet was placed on a losing outcome.
+    #[msg("Bet was placed on a losing outcome")]
+    LosingBet,
+
+    /// The market has already been successfully resolved.
+    #[msg("Market is already resolved")]
+    MarketAlreadyResolved,
+
+    /// The market timeout has not yet passed.
+    #[msg("Market timeout has not yet passed")]
+    TimeoutNotPassed,
+
+    /// The market is not in a sweepable state.
+    #[msg("Market is not in a sweepable state")]
+    MarketNotSweepable,
+
+    /// The mandatory sweep delay period has not yet passed.
+    #[msg("Sweep delay period has not yet passed")]
+    SweepNotReady,
 }
