@@ -41,4 +41,11 @@ export class MarketsController {
   close(@Param('id') id: string) {
     return this.marketsService.closeMarket(id);
   }
+
+  /** POST /api/markets/sync */
+  @Post('sync')
+  @HttpCode(HttpStatus.OK)
+  syncFixtures() {
+    return this.marketsService.syncFixturesAndCreateMarkets();
+  }
 }

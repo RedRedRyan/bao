@@ -82,7 +82,7 @@ export class MarketsService {
       }
 
       // Limit lookahead to 7 days to conserve SOL/fees
-      if (startTime > nowSec + (7 * 24 * 3600)) {
+      if (startTime > nowSec + (2 * 24 * 3600)) { // Limit lookahead to 48 hours to conserve SOL/fees
         continue;
       }
 
@@ -130,37 +130,9 @@ export class MarketsService {
           question: `Which team will score Goal 1 (First Goal)?`,
         });
 
-        // 3. Next Corner (Corner 1)
-        await this.createMarket({
-          fixtureId,
-          marketType: MarketType.SIDE_BASED,
-          eventType: EventType.CORNER,
-          teamScope: TeamScope.ANY,
-          ordinal: Ordinal.NEXT,
-          outcomes: [
-            { index: 0, label: p1 },
-            { index: 1, label: p2 },
-          ],
-          timeoutTs,
-          question: `Which team will get Corner 1 (First Corner)?`,
-        });
 
-        // 4. Next Yellow Card (Yellow Card 1)
-        await this.createMarket({
-          fixtureId,
-          marketType: MarketType.SIDE_BASED,
-          eventType: EventType.YELLOW_CARD,
-          teamScope: TeamScope.ANY,
-          ordinal: Ordinal.NEXT,
-          outcomes: [
-            { index: 0, label: p1 },
-            { index: 1, label: p2 },
-          ],
-          timeoutTs,
-          question: `Which team will receive Yellow Card 1 (First Card)?`,
-        });
 
-        // 5. Total Goals Over/Under 2.5
+	        // 3. Total Goals Over/Under 2.5
         await this.createMarket({
           fixtureId,
           marketType: MarketType.THRESHOLD,
@@ -172,8 +144,23 @@ export class MarketsService {
             { index: 1, label: 'Under 2.5' },
           ],
           timeoutTs,
-          question: `Total goals over 2.5?`,
-        });
+	          question: `Total goals over 2.5?`,
+	        });
+	
+	        // 4. Away Team to Score Anytime (Yes / No)
+	        await this.createMarket({
+	          fixtureId,
+	          marketType: MarketType.THRESHOLD,
+	          eventType: EventType.GOAL,
+	          teamScope: TeamScope.AWAY,
+	          ordinal: Ordinal.ANYTIME,
+	          outcomes: [
+	            { index: 0, label: 'Yes' },
+	            { index: 1, label: 'No' },
+	          ],
+	          timeoutTs,
+	          question: `${p2} to score anytime?`,
+	        });
 
         createdCount++;
       } catch (err) {
