@@ -6,18 +6,8 @@ import { DatabaseModule } from './database/database.module';
 import { SolanaModule } from './solana/solana.module';
 import { MarketsModule } from './markets/markets.module';
 import { OracleModule } from './oracle/oracle.module';
+import { TxoddsModule } from './txodds/txodds.module';
 
-/**
- * AppModule – Phase 1
- *
- * Only the four core modules needed to:
- *  - Connect MongoDB
- *  - Connect Solana / Anchor
- *  - Create and list markets
- *  - Manually resolve markets (oracle)
- *
- * Phase 2 will add: TxoddsModule, WorkersModule, AttestationModule
- */
 @Module({
   imports: [
     ConfigModule,
@@ -25,6 +15,7 @@ import { OracleModule } from './oracle/oracle.module';
     SolanaModule,
     MarketsModule,
     OracleModule,
+    TxoddsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

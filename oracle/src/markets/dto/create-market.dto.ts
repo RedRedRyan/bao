@@ -9,63 +9,64 @@ import {
   Max,
   ArrayMinSize,
   IsNumber,
+  ValidateNested,
 } from 'class-validator';
-import { MarketType } from '../schemas/market.schema';
+import { Type } from 'class-transformer';
+import { MarketType, EventType, TeamScope, Ordinal } from '../schemas/market.schema';
 
-export class CreateMarketDto {
-  /**
-   * External fixture / event identifier.
-   * Used to associate this market with a real-world event.
-   */
+export class OutcomeDto {
+  @IsInt()
+  @Min(0)
+  index: number;
+
   @IsString()
   @IsNotEmpty()
-  fixtureId: string;
+  label: string;
+}
 
-  /**
-   * Human-readable question.
-   * e.g. "Who will win Arsenal vs Chelsea?"
-   */
+export class CreateMarketDto {
+  /** TxODDS fixture ID */
+  @IsInt()
+  fixtureId: number;
+
   @IsString()
   @IsNotEmpty()
   question: string;
 
-  /** Market type determines which evaluator will resolve it in Phase 2 */
   @IsEnum(MarketType)
   @IsOptional()
   marketType?: MarketType;
 
-  /**
-   * Ordered list of outcome labels.
-   * The index maps to the on-chain outcome index.
-   * e.g. ['Home', 'Draw', 'Away']
-   */
-  @IsArray()
-  @IsString({ each: true })
-  @ArrayMinSize(2)
-  outcomes: string[];
+  @IsEnum(EventType)
+  @IsOptional()
+  eventType?: EventType;
 
-  /**
-   * Fee in basis points (100 bps = 1%).
-   * Defaults to 200 (2%) if not provided.
-   */
+  @IsEnum(TeamScope)
+  @IsOptional()
+  teamScope?: TeamScope;
+
+  @IsEnum(Ordinal)
+  @IsOptional()
+  ordinal?: Ordinal;
+
+  /** Ordered list of outcome objects [{ index, label }] */
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OutcomeDto)
+  @ArrayMinSize(2)
+  outcomes: OutcomeDto[];
+
   @IsInt()
   @Min(0)
   @Max(10_000)
   @IsOptional()
   feeBps?: number;
 
-  /**
-   * Unix timestamp (seconds) after which the market times out.
-   * Bettors may claim refunds after this timestamp if the market is unresolved.
-   */
+  /** Unix timestamp (seconds) for market timeout */
   @IsNumber()
   @IsNotEmpty()
   timeoutTs: number;
 
-  /**
-   * Optional off-chain metadata URI.
-   * Will be stored on-chain and in MongoDB.
-   */
   @IsString()
   @IsOptional()
   metadataUri?: string;
