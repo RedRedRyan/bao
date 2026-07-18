@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         uri: configService.getOrThrow<string>('DATABASE_URL'),
+        // uri:'mongodb+srv://dbUser:q1w2e3r4t5y6@cluster0.uskanir.mongodb.net/?appName=Cluster0',
       }),
       inject: [ConfigService],
     }),
