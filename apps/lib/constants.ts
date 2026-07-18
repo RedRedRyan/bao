@@ -1,11 +1,10 @@
 export const NAV_ITEMS = [
     { href: "/", label: "Dashboard" },
     { href: "/search", label: "Search" },
-    // { href: '/watchlist', label: 'Watchlist' },
 ];
-// constants/matches.ts
 
 export interface Match {
+    id: number;
     slug: string;
     homeTeam: string;
     homeCode: string;
@@ -29,6 +28,7 @@ export interface Match {
 
 export const matchLists: Match[] = [
     {
+        id: 1,
         slug: "france-vs-morocco",
         homeTeam: "France",
         homeCode: "FR",
@@ -46,6 +46,7 @@ export const matchLists: Match[] = [
         awayWinProbability: "20%",
     },
     {
+        id: 2,
         slug: "argentina-vs-brazil",
         homeTeam: "Argentina",
         homeCode: "AR",
@@ -63,6 +64,7 @@ export const matchLists: Match[] = [
         awayWinProbability: "25%",
     },
     {
+        id: 3,
         slug: "england-vs-germany",
         homeTeam: "England",
         homeCode: "GB-ENG",
@@ -80,6 +82,7 @@ export const matchLists: Match[] = [
         awayWinProbability: "28%",
     },
     {
+        id: 4,
         slug: "spain-vs-portugal",
         homeTeam: "Spain",
         homeCode: "ES",
@@ -97,6 +100,7 @@ export const matchLists: Match[] = [
         awayWinProbability: "25%",
     },
     {
+        id: 5,
         slug: "netherlands-vs-belgium",
         homeTeam: "Netherlands",
         homeCode: "NL",
@@ -114,6 +118,7 @@ export const matchLists: Match[] = [
         awayWinProbability: "27%",
     },
     {
+        id: 6,
         slug: "usa-vs-mexico",
         homeTeam: "USA",
         homeCode: "US",
@@ -130,5 +135,4 @@ export const matchLists: Match[] = [
         drawProbability: "32%",
         awayWinProbability: "30%",
     },
-    // Add more as needed
 ];

@@ -1,3 +1,5 @@
 node_modules
 .env
 keygen.js
+oraclewallet.json
+seed

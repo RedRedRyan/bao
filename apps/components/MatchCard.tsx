@@ -31,48 +31,46 @@ const MatchCard: React.FC<MatchCardProps> = ({
                                                  time,
                                              }) => {
     return (
-        <Link href={`.././matches/${slug}`} className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
-            <div className="bg-gray-900 text-white rounded-lg p-4 w-full max-w-md cursor-pointer border border-transparent hover:border-white/20">
+        <Link href={`/matches/${slug}`} className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+            <div className="bg-white/5 backdrop-blur-md text-white rounded-2xl p-6 w-full cursor-pointer border border-white/10 hover:border-white/20 transition-all">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-4">
-          <span className="text-sm text-gray-400 flex items-center gap-1">
+                <div className="flex justify-between items-center mb-6">
+          <span className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-1.5">
             <Clock size={14} />
               {time}
           </span>
-                    <span className="text-sm text-gray-400">Vol: {volume}</span>
+                    <span className="text-xs text-white/40 uppercase tracking-widest font-semibold">Vol: {volume}</span>
                 </div>
 
                 {/* Teams */}
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                        <ReactCountryFlag
-                            countryCode={homeCode}
-                            svg
-                            style={{ width: "2em", height: "2em" }}
-                        />
-                        <span className="font-semibold">{homeTeam}</span>
+                <div className="flex flex-col gap-4 mb-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <ReactCountryFlag
+                                countryCode={homeCode}
+                                svg
+                                style={{ width: "1.5em", height: "1.5em", borderRadius: "50%" }}
+                            />
+                            <span className="text-lg font-bold font-schibsted-grotesk">{homeTeam}</span>
+                        </div>
+                        <span className="text-white/40 font-mono">{odds.home}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <ReactCountryFlag
-                            countryCode={awayCode}
-                            svg
-                            style={{ width: "2em", height: "2em" }}
-                        />
-                        <span className="font-semibold">{awayTeam}</span>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <ReactCountryFlag
+                                countryCode={awayCode}
+                                svg
+                                style={{ width: "1.5em", height: "1.5em", borderRadius: "50%" }}
+                            />
+                            <span className="text-lg font-bold font-schibsted-grotesk">{awayTeam}</span>
+                        </div>
+                        <span className="text-white/40 font-mono">{odds.away}</span>
                     </div>
                 </div>
 
-                {/* Odds */}
-                <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-blue-600 rounded-md py-2 font-bold">
-                        {homeCode} {odds.home}
-                    </div>
-                    <div className="bg-gray-600 rounded-md py-2 font-bold">
-                        DRAW {odds.draw}
-                    </div>
-                    <div className="bg-red-600 rounded-md py-2 font-bold">
-                        {awayCode} {odds.away}
-                    </div>
+                {/* Quick Bet Button */}
+                <div className="w-full py-3 rounded-xl bg-white/10 text-white font-semibold text-center hover:bg-white/20 transition-colors">
+                    View Markets
                 </div>
             </div>
         </Link>

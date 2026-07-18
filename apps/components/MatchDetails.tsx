@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReactCountryFlag from "react-country-flag";
-import { Clock } from "lucide-react";
-import {Match } from "@/lib/constants"
+import { Clock, Loader2 } from "lucide-react";
+import { Match } from "@/lib/constants";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Program, AnchorProvider, BN, web3 } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
+import idl from "../../oracle/idl/flashBaoIdl.json";
 
 // ── Extend Match with extra fields for the details page ──
 interface MatchDetailsProps extends Match {
@@ -11,6 +15,14 @@ interface MatchDetailsProps extends Match {
     homeWinProbability?: string;
     drawProbability?: string;
     awayWinProbability?: string;
+}
+
+interface BackendMarket {
+    _id: string;
+    marketId: string; // hex string
+    question: string;
+    outcomes: { index: number; label: string }[];
+    status: string;
 }
 
 // ── Small helper for detail rows ──
@@ -24,6 +36,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 }
 
 export default function MatchDetails({
+                                         id: fixtureId,
                                          homeTeam,
                                          homeCode,
                                          awayTeam,
@@ -40,14 +53,105 @@ export default function MatchDetails({
                                          awayWinProbability,
                                      }: MatchDetailsProps) {
     const [betAmount, setBetAmount] = useState("");
-    const [selectedOutcome, setSelectedOutcome] = useState<"home" | "draw" | "away" | null>(null);
+    const [selectedOutcomeIndex, setSelectedOutcomeIndex] = useState<number | null>(null);
+    const [markets, setMarkets] = useState<BackendMarket[]>([]);
+    const [selectedMarket, setSelectedMarket] = useState<BackendMarket | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [betting, setBetting] = useState(false);
 
-    // ── Derived values for projected returns ──
-    const selectedOdds = selectedOutcome ? odds[selectedOutcome] : null;
+    const { connection } = useConnection();
+    const { publicKey, sendTransaction } = useWallet();
+
+    const program = useMemo(() => {
+        const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
+        return new Program(idl as any, provider);
+    }, [connection]);
+
+    useEffect(() => {
+        const fetchMarkets = async () => {
+            try {
+                const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
+                const response = await fetch(`${baseUrl}/api/markets?fixtureId=${fixtureId}`);
+                const data = await response.json();
+                setMarkets(data);
+                if (data.length > 0) {
+                    setSelectedMarket(data[0]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch markets:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMarkets();
+    }, [fixtureId]);
+
+    const handlePlaceBet = async () => {
+        if (!publicKey || !selectedMarket || selectedOutcomeIndex === null || !betAmount) return;
+
+        setBetting(true);
+        try {
+            const amountBN = new BN(parseFloat(betAmount) * web3.LAMPORTS_PER_SOL);
+            const marketIdBuffer = Buffer.from(selectedMarket.marketId, 'hex');
+            
+            // Derive PDAs
+            const [configPda] = PublicKey.findProgramAddressSync(
+                [Buffer.from("config")],
+                program.programId
+            );
+            const [marketPda] = PublicKey.findProgramAddressSync(
+                [Buffer.from("market"), marketIdBuffer],
+                program.programId
+            );
+            const [vaultPda] = PublicKey.findProgramAddressSync(
+                [Buffer.from("vault"), marketPda.toBuffer()],
+                program.programId
+            );
+
+            const outcomeBuffer = Buffer.alloc(2);
+            outcomeBuffer.writeUInt16LE(selectedOutcomeIndex);
+            const [betPda] = PublicKey.findProgramAddressSync(
+                [Buffer.from("bet"), marketPda.toBuffer(), publicKey.toBuffer(), outcomeBuffer],
+                program.programId
+            );
+
+            const tx = await program.methods
+                .placeBet(amountBN, selectedOutcomeIndex)
+                .accounts({
+                    bettor: publicKey,
+                    config: configPda,
+                    market: marketPda,
+                    bet: betPda,
+                    vault: vaultPda,
+                    systemProgram: web3.SystemProgram.programId,
+                } as any)
+                .transaction();
+
+            const signature = await sendTransaction(tx, connection);
+            await connection.confirmTransaction(signature, "processed");
+            alert(`Bet placed successfully! Signature: ${signature}`);
+        } catch (error) {
+            console.error("Betting failed:", error);
+            alert("Betting failed. Check console for details.");
+        } finally {
+            setBetting(false);
+        }
+    };
+
+    const selectedOutcomeLabel = selectedMarket?.outcomes.find(o => o.index === selectedOutcomeIndex)?.label;
     const projectedReturn =
-        betAmount && selectedOdds && !isNaN(Number(betAmount))
-            ? `$${(Number(betAmount) * parseFloat(selectedOdds)).toFixed(2)}`
+        betAmount && !isNaN(Number(betAmount))
+            ? `$${(Number(betAmount) * 2.0).toFixed(2)}` // Simplified return for UI
             : "$0.00";
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-black">
+                <Loader2 className="w-8 h-8 text-blue animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <section className="min-h-screen pt-28 pb-16 container mx-auto px-5 2xl:px-0 bg-black">
@@ -84,45 +188,38 @@ export default function MatchDetails({
                         </div>
                     </div>
 
-                    {/* Description */}
-                    {description && (
-                        <p className="text-white/60 text-base leading-relaxed max-w-2xl">
-                            {description}
-                        </p>
-                    )}
+                    {/* Market Selection */}
+                    <div className="flex flex-col gap-4">
+                        <h2 className="text-xl font-bold text-white">Available Markets</h2>
+                        <div className="flex flex-wrap gap-2">
+                            {markets.map((m) => (
+                                <button
+                                    key={m._id}
+                                    onClick={() => {
+                                        setSelectedMarket(m);
+                                        setSelectedOutcomeIndex(null);
+                                    }}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                                        selectedMarket?._id === m._id
+                                            ? "bg-blue text-white"
+                                            : "bg-white/5 text-white/60 hover:bg-white/10"
+                                    }`}
+                                >
+                                    {m.question}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-                    {/* ── Stats row (similar to vault stats) ── */}
+                    {/* Stats row */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-white/10 pt-8">
                         <div className="flex flex-col gap-1">
                             <span className="text-xs text-white/40 uppercase tracking-widest">Total Volume</span>
                             <span className="text-3xl md:text-4xl font-schibsted-grotesk font-semibold text-white">
-                {totalVolume || volume}
-              </span>
+                                {totalVolume || volume}
+                            </span>
                         </div>
-
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs text-white/40 uppercase tracking-widest">Home Win</span>
-                            <span className="text-3xl md:text-4xl font-schibsted-grotesk font-semibold text-white">
-                {homeWinProbability || "-"}
-              </span>
-                            <span className="text-xs text-white/40">Odds {odds.home}</span>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs text-white/40 uppercase tracking-widest">Draw</span>
-                            <span className="text-3xl md:text-4xl font-schibsted-grotesk font-semibold text-white">
-                {drawProbability || "-"}
-              </span>
-                            <span className="text-xs text-white/40">Odds {odds.draw}</span>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs text-white/40 uppercase tracking-widest">Away Win</span>
-                            <span className="text-3xl md:text-4xl font-schibsted-grotesk font-semibold text-white">
-                {awayWinProbability || "-"}
-              </span>
-                            <span className="text-xs text-white/40">Odds {odds.away}</span>
-                        </div>
+                        {/* Probability stats could be updated based on real market data if available */}
                     </div>
                 </div>
 
@@ -133,45 +230,47 @@ export default function MatchDetails({
                     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 flex flex-col gap-4">
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-white/60">Place Bet</span>
-                            <span className="text-sm text-white/60">Odds</span>
+                            <span className="text-sm text-white/60">Select Outcome</span>
                         </div>
 
                         {/* Outcome selection buttons */}
-                        <div className="grid grid-cols-3 gap-2">
-                            {(["home", "draw", "away"] as const).map((outcome) => (
+                        <div className="grid grid-cols-1 gap-2">
+                            {selectedMarket?.outcomes.map((outcome) => (
                                 <button
-                                    key={outcome}
-                                    onClick={() => setSelectedOutcome(outcome)}
-                                    className={`py-2 rounded-md font-bold text-sm transition-colors ${
-                                        selectedOutcome === outcome
-                                            ? "bg-blue-600 text-white"
+                                    key={outcome.index}
+                                    onClick={() => setSelectedOutcomeIndex(outcome.index)}
+                                    className={`py-3 px-4 rounded-xl font-bold text-sm text-left transition-colors ${
+                                        selectedOutcomeIndex === outcome.index
+                                            ? "bg-blue text-white"
                                             : "bg-white/10 text-white/60 hover:bg-white/20"
                                     }`}
                                 >
-                                    {outcome === "home" ? homeCode : outcome === "away" ? awayCode : "Draw"}
-                                    <br />
-                                    <span className="text-xs font-normal">{odds[outcome]}</span>
+                                    {outcome.label}
                                 </button>
                             ))}
                         </div>
 
                         {/* Amount input */}
                         <div className="flex flex-col gap-1 mt-2">
-                            <input
-                                type="number"
-                                min="0"
-                                placeholder="0.00"
-                                value={betAmount}
-                                onChange={(e) => setBetAmount(e.target.value)}
-                                className="bg-transparent text-4xl font-schibsted-grotesk font-semibold text-green placeholder-white/20 outline-none w-full"
-                            />
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    placeholder="0.00"
+                                    value={betAmount}
+                                    onChange={(e) => setBetAmount(e.target.value)}
+                                    className="bg-transparent text-4xl font-schibsted-grotesk font-semibold text-white placeholder-white/20 outline-none w-full"
+                                />
+                                <span className="text-2xl font-bold text-blue">SOL</span>
+                            </div>
                             <div className="flex items-center justify-between text-sm text-white/40">
-                                <span>${betAmount || "0"}</span>
+                                <span>≈ ${betAmount ? (Number(betAmount) * 150).toFixed(2) : "0.00"}</span>
                                 <button
-                                    onClick={() => setBetAmount("100")} // example max
+                                    onClick={() => setBetAmount("1")}
                                     className="bg-white/10 hover:bg-white/20 text-white/80 text-xs font-bold px-2 py-0.5 rounded"
                                 >
-                                    MAX
+                                    1 SOL
                                 </button>
                             </div>
                         </div>
@@ -182,31 +281,34 @@ export default function MatchDetails({
                         <DetailRow label="Match">
                             <span className="text-white">{homeTeam} vs {awayTeam}</span>
                         </DetailRow>
-                        <DetailRow label="Date">
-                            <span className="text-white">{date || time}</span>
+                        <DetailRow label="Market">
+                            <span className="text-white">{selectedMarket?.question || "-"}</span>
                         </DetailRow>
-                        <DetailRow label="Selected Odds">
-                            <span className="text-white">{selectedOdds || "-"}</span>
+                        <DetailRow label="Selected">
+                            <span className="text-white">{selectedOutcomeLabel || "-"}</span>
                         </DetailRow>
                         <div className="border-t border-white/10 my-1" />
                         <DetailRow label="Projected Return">
                             <span className="text-white font-semibold">{projectedReturn}</span>
                         </DetailRow>
-                        <DetailRow label="Potential Profit">
-              <span className="text-white">
-                {betAmount && selectedOdds
-                    ? `$${(Number(betAmount) * parseFloat(selectedOdds) - Number(betAmount)).toFixed(2)}`
-                    : "$0.00"}
-              </span>
-                        </DetailRow>
                     </div>
 
                     {/* ── CTA Button ── */}
                     <button
-                        disabled={!selectedOutcome || !betAmount || Number(betAmount) <= 0}
-                        className="w-full rounded-xl bg-blue hover:bg-blue/80 active:scale-[0.98] transition-all text-white font-semibold text-lg py-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handlePlaceBet}
+                        disabled={!publicKey || !selectedOutcomeIndex === null || !betAmount || betting}
+                        className="w-full rounded-xl bg-blue hover:bg-blue/80 active:scale-[0.98] transition-all text-white font-semibold text-lg py-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        Place Bet
+                        {betting ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Placing Bet...
+                            </>
+                        ) : !publicKey ? (
+                            "Connect Wallet"
+                        ) : (
+                            "Place Bet"
+                        )}
                     </button>
                 </div>
             </div>
